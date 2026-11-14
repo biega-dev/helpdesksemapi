@@ -1,94 +1,64 @@
-# Help Desk — versão local em Tkinter
+# Help Desk — Tkinter local
 
-Aplicação desktop em Python, sem API, servidor, conexão de rede ou banco de dados.
-As telas usam diretamente as classes do projeto original por meio de `SistemaLocal`.
+Sistema de chamados, atendimento técnico, estoque e administração de usuários.
+Segue os 24 casos de uso dos documentos em [docs/modelagem](docs/modelagem),
+reenviados em 14/11/2026. Python 3.10+ e biblioteca padrão, sem API ou banco.
 
-## Executar
+## Abrir
 
-Instale Python 3.10 ou superior com Tkinter e execute nesta pasta:
+No Windows, abra **iniciar.bat**, ou execute `python main.py` nesta pasta.
+O Python precisa incluir Tkinter (opção padrão do instalador para Windows).
 
-```powershell
-python main.py
-```
+- **Aplicativo Principal:** usuários comuns e técnicos. “Criar minha conta” cria
+  somente usuário comum, com nome, e-mail, setor e senha.
+- **Painel Administrativo:** administradores. Conta inicial de demonstração:
+  `marina@empresa.com`, senha `admin123`.
+- `python painel_admin.py` abre a entrada administrativa diretamente.
 
-No Windows, também é possível abrir `iniciar.bat`.
-Não é necessário instalar bibliotecas com pip. Tkinter acompanha a instalação
-padrão do Python para Windows.
+Para demonstrar os perfis **com os mesmos dados**, mantenha uma janela aberta e
+use “Sair da conta”, selecione a área e entre com outra conta. Sair preserva os
+registros; **fechar o programa descarta todos os dados da execução**. Processos
+separados não compartilham dados. Para dois computadores, use `helpdeskteste`.
 
-## Primeiro acesso
+## Telas e casos de uso
 
-O programa começa com a mesma administradora da demonstração original:
+| Área | Operações | Casos de uso |
+| --- | --- | --- |
+| Entrada | Autocadastro comum; login separado por área | UC01, UC06, UC16 |
+| Chamados do usuário | Abrir, consultar, cancelar enquanto aberto, histórico | UC02–UC05 |
+| Chamados do técnico | Fila, assumir, registrar atendimento, atualizar status | UC07–UC10 |
+| Equipamentos no chamado | Saída de estoque vinculada e registrada no histórico | UC11 |
+| Estoque | Cadastro, consulta, edição, reposição, baixa e movimentações | UC12–UC15 |
+| Usuários (admin) | Gestão de técnicos, bloqueio/desbloqueio e gestão de administradores | UC17–UC22 |
+| Chamados da empresa (admin) | Consultar todos os chamados e históricos | UC23 |
+| Equipe (admin) | Carga, pendências, resolvidos e chamados por técnico | UC24 |
 
-- E-mail: `marina@empresa.com`
-- Senha: `admin123`
+“Minha senha” permite trocar a própria senha, informando a atual. As regras
+RN01–RN06 continuam nas classes: cancelamento só pelo solicitante enquanto aberto;
+limite de cinco atendimentos por técnico; solução obrigatória para resolver;
+estoque não negativo e sem movimentação após baixa; exclusão de técnico impedida
+quando em atendimento; preservação do último administrador ativo.
 
-Esse é um acesso de demonstração local. Entre com ele e use **Cadastrar usuário**
-para criar contas comuns, técnicas ou outro administrador. As demais contas não
-são criadas automaticamente.
+## Demonstrar
 
-## Telas
+1. Entre como administrador, cadastre um técnico e confira Usuários/Equipe.
+2. Saia, selecione Aplicativo Principal, crie uma conta comum e abra um chamado.
+3. Entre como técnico, assuma o chamado e cadastre equipamentos em Estoque.
+4. Faça uma reposição; no chamado, registre uma saída na aba Equipamentos.
+5. Confira o saldo e as Movimentações; registre atendimento e finalize com solução.
+6. Volte ao administrador para consultar a equipe, editar, bloquear/desbloquear
+   e excluir um técnico sem chamados em atendimento.
 
-- Login com e-mail e senha.
-- Painel de chamados com resumo, busca, filtros e atualização.
-- Cadastro de usuários pelo administrador, com campo de setor, especialidade ou cargo.
-- Abertura de chamado pelo usuário comum.
-- Detalhes e histórico de atendimento.
-- Cancelamento de chamado aberto pelo solicitante.
-- Técnico assume, registra diagnóstico/observação/solução e altera o status.
+## Código e verificação
 
-As telas mantêm o mesmo fluxo da versão com API. A diferença é que cada ação
-chama métodos dos objetos Python que estão na memória do próprio programa.
-O backend original decide as permissões e as regras de negócio.
+- `helpdesk/`: domínio do público main `d324b73`. Única extensão nesta cópia
+  privada: data/tipo de movimentação previstos no UML. Público não alterado.
+- `sistema_local.py`: sessão, validação de campos e adaptação para as telas.
+- `aplicacao.py`, `telas/`: interface e tratamento de erros.
+- `docs/modelagem/`: exatamente os documentos novos fornecidos pelo grupo.
+- `exemplos/demonstracao_terminal.py`: demonstração original.
 
-## Demonstrar no trabalho
-
-1. Abra o programa e entre como Marina.
-2. Cadastre um usuário comum e um técnico, anotando os acessos escolhidos.
-3. Clique em **Sair da conta**, sem fechar a janela.
-4. Entre como usuário comum e abra um chamado sobre um erro em um sistema.
-5. Saia da conta e entre como técnico. Abra o chamado e clique em **Assumir chamado**.
-6. Na aba **Registrar atendimento**, registre um diagnóstico ou uma pendência.
-7. Registre uma Solução, escolhendo o status Resolvido.
-8. Volte à conta do solicitante e consulte o status e o histórico.
-
-**Sair da conta mantém os dados. Fechar o programa apaga os dados da execução.**
-Cada janela iniciada em outro processo é independente. Esta versão não compartilha
-chamados entre computadores, pois não usa servidor nem arquivos de persistência.
-
-## Estrutura
-
-- `main.py`: inicia o Tkinter.
-- `aplicacao.py`: controla a janela e a navegação.
-- `sistema_local.py`: mantém o usuário logado, chama o domínio e prepara os campos para as telas.
-- `telas/`: login, painel, cadastro, chamados e componentes visuais.
-- `helpdesk/`: classes originais de usuários, chamados, atendimentos e estoque.
-- `tests/`: testes originais e testes da integração local com as telas.
-- `exemplos/demonstracao_terminal.py`: demonstração original pelo terminal.
-
-As classes em `helpdesk/` foram copiadas sem alterações da `main` do projeto
-original, revisão `d324b73`. Isso preserva herança, encapsulamento, polimorfismo,
-classes abstratas, exceções e regras de negócio já implementadas pelo grupo.
-
-O módulo de estoque e os métodos de edição/bloqueio de contas continuam no domínio
-original. As telas desta versão são as mesmas da versão com API e não incluem
-interfaces para essas operações adicionais.
-
-Para executar a demonstração original completa (incluindo estoque e administração):
-
-```powershell
-python -m exemplos.demonstracao_terminal
-```
-
-## Testes
-
-```powershell
-python -m unittest discover -s tests
-```
-
-Os testes incluem o domínio original, isolamento dos chamados por usuário, troca
-de perfil, filtros, cancelamento, atendimento e resolução. O teste de fluxo local
-bloqueia conexões de rede para confirmar que o programa funciona sem servidor.
-
-## Integrantes
-
-Vinicius Begnini Felicio, Gabriel Verruck, Guilherme Bortoletti e Mateus Biegalski.
+Execute `python -m unittest discover -v`. Os testes incluem os fluxos gráficos
+com conexões de rede bloqueadas. Não há e-mail, SLA, banco ou integrações externas.
+A visibilidade do técnico segue o código público: fila aberta e chamados que ele
+atende. Administradores consultam todos os chamados.

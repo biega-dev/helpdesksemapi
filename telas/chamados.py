@@ -74,6 +74,20 @@ class DetalheChamado(Formulario):
         self.texto_historico.configure(state="disabled")
         if self.usuario['perfil'] == "Técnico de TI":
             self.abas.add(self.aba_atendimento, text="Registrar atendimento", state="disabled")
+        self.aba_equipamentos = ttk.Frame(self.abas, padding=14)
+        self.equipamentos = []
+        self.selecao_equipamento_iniciada = False
+        self.equipamento = escolha(self.aba_equipamentos, 'Equipamento disponível', ['Carregando...'])
+        self.equipamento.bind('<<ComboboxSelected>>', lambda e: self.atualizar_botoes())
+        self.quantidade_saida = campo(self.aba_equipamentos, 'Quantidade para este chamado (un.)')
+        self.quantidade_saida.insert(0, '1')
+        ttk.Label(self.aba_equipamentos, text='A saída reduz o saldo e registra a entrega no histórico do chamado.',
+                  style='Discreto.TLabel', wraplength=650).pack(anchor='w', pady=16)
+        self.botao_saida = ttk.Button(self.aba_equipamentos, text='Registrar saída de equipamento',
+                                     style='Principal.TButton', command=self.registrar_saida)
+        self.botao_saida.pack(anchor='e', pady=8)
+        if self.usuario['perfil'] == 'Técnico de TI':
+            self.abas.add(self.aba_equipamentos, text='Equipamentos', state='disabled')
         linha = ttk.Frame(self.aba_atendimento)
         linha.pack(fill="x")
         esquerda = ttk.Frame(linha)
@@ -94,7 +108,8 @@ class DetalheChamado(Formulario):
         def buscar():
             chamado = self.app.servico.consultar_chamado(self.chamado_id)
             historico = self.app.servico.listar_atendimentos(self.chamado_id)
-            return chamado, historico
+            equipamentos = self.app.servico.listar_equipamentos() if self.usuario['perfil'] == 'Técnico de TI' else []
+            return chamado, historico, equipamentos
         self.app.executar(buscar, self.receber_dados, silencioso=silencioso, falha=self.verificar_acesso)
 
     def verificar_acesso(self, erro):
@@ -109,7 +124,21 @@ class DetalheChamado(Formulario):
     def receber_dados(self, dados):
         if not self.winfo_exists():
             return
-        self.chamado, historico = dados
+        self.chamado, historico, equipamentos = dados
+        indice_anterior = self.equipamento.current()
+        codigo_anterior = (self.equipamentos[indice_anterior]['codigo']
+                           if 0 <= indice_anterior < len(self.equipamentos) else None)
+        self.equipamentos = equipamentos
+        opcoes = [f"{e['codigo']} • {e['descricao']} • {e['quantidade']} un. em estoque" for e in equipamentos]
+        self.equipamento.configure(values=opcoes or ['Nenhum equipamento ativo'])
+        codigos = [e['codigo'] for e in equipamentos]
+        if codigo_anterior in codigos:
+            self.equipamento.current(codigos.index(codigo_anterior))
+        elif opcoes and not self.selecao_equipamento_iniciada:
+            self.equipamento.current(0)
+        else:
+            self.equipamento.set('Selecione um equipamento' if opcoes else 'Nenhum equipamento ativo')
+        self.selecao_equipamento_iniciada = True
         self.indisponivel = False
         self.exibir_chamado()
         registros = []
@@ -143,10 +172,12 @@ class DetalheChamado(Formulario):
         self.botao_assumir.configure(state="normal" if aberto else "disabled")
         self.botao_cancelar.configure(state="normal" if cancelar else "disabled")
         self.botao_salvar.configure(state="normal" if atender else "disabled")
+        self.botao_saida.configure(state='normal' if atender and self.equipamentos and self.equipamento.current() >= 0 else 'disabled')
         if self.usuario['perfil'] == "Técnico de TI":
-            if not atender and self.abas.select() == str(self.aba_atendimento):
+            if not atender and self.abas.select() in (str(self.aba_atendimento), str(self.aba_equipamentos)):
                 self.abas.select(0)
             self.abas.tab(self.aba_atendimento, state="normal" if atender else "disabled")
+            self.abas.tab(self.aba_equipamentos, state='normal' if atender else 'disabled')
 
     def executar_acao(self, tarefa, mensagem, limpar=False):
         if self.enviando:
@@ -194,8 +225,19 @@ class DetalheChamado(Formulario):
         self.executar_acao(lambda: self.app.servico.registrar_atendimento(self.chamado_id, dados),
                            "Atendimento registrado.", limpar=True)
 
+    def registrar_saida(self):
+        indice = self.equipamento.current()
+        if indice < 0 or indice >= len(self.equipamentos):
+            return
+        codigo = self.equipamentos[indice]['codigo']
+        quantidade = self.quantidade_saida.get()
+        def registrar():
+            self.app.servico.registrar_saida_equipamento(codigo, quantidade, self.chamado_id)
+            return self.app.servico.consultar_chamado(self.chamado_id)
+        self.executar_acao(registrar, 'Saída registrada no estoque e no histórico do chamado.')
+
     def atualizar_automaticamente(self):
-        if not self.indisponivel:
+        if not self.app.modo_local and not self.indisponivel:
             self.atualizar(silencioso=True)
         self.agendamento = self.after(10000, self.atualizar_automaticamente)
 

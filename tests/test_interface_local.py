@@ -46,6 +46,7 @@ class TestInterfaceLocal(unittest.TestCase):
         campo.insert(0, valor)
 
     def login(self, email, senha='teste123'):
+        self.app.tela.acesso.set('administrativo' if email == 'marina@empresa.com' else 'principal')
         self.preencher(self.app.tela.email, email)
         self.preencher(self.app.tela.senha, senha)
         self.app.tela.entrar()
@@ -73,14 +74,14 @@ class TestInterfaceLocal(unittest.TestCase):
         form.descricao.insert('1.0', 'O relatório de estoque não é gerado.')
         form.salvar()
         self.aguardar()
-        chamado_id = self.app.tela.chamados[0]['id']
-        self.app.tela.busca.set('emissao')
-        self.assertEqual(self.app.tela.tabela.get_children(), (str(chamado_id),))
-        self.app.tela.tabela.selection_set(str(chamado_id))
+        chamado_id = self.app.tela.paginas['Chamados'].chamados[0]['id']
+        self.app.tela.paginas['Chamados'].busca.set('emissao')
+        self.assertEqual(self.app.tela.paginas['Chamados'].tabela.get_children(), (str(chamado_id),))
+        self.app.tela.paginas['Chamados'].tabela.selection_set(str(chamado_id))
         self.app.tela.atualizar()
         self.aguardar()
-        self.assertEqual(self.app.tela.tabela.selection(), (str(chamado_id),))
-        self.assertEqual(self.app.tela.busca.get(), 'emissao')
+        self.assertEqual(self.app.tela.paginas['Chamados'].tabela.selection(), (str(chamado_id),))
+        self.assertEqual(self.app.tela.paginas['Chamados'].busca.get(), 'emissao')
         self.app.sair()
         self.login('carlos@teste.com')
         self.app.abrir_dialogo(DetalheChamado, chamado_id)
@@ -105,7 +106,7 @@ class TestInterfaceLocal(unittest.TestCase):
         self.aguardar()
         self.app.sair()
         self.login('ana@teste.com')
-        self.assertEqual(self.app.tela.chamados[0]['status'], 'RESOLVIDO')
+        self.assertEqual(self.app.tela.paginas['Chamados'].chamados[0]['status'], 'RESOLVIDO')
         self.app.abrir_dialogo(DetalheChamado, chamado_id)
         self.aguardar()
         self.assertIn('Ajustado o filtro', self.app.dialogo.texto_historico.get('1.0', 'end'))

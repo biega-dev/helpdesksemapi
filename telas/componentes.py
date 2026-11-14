@@ -1,4 +1,5 @@
 import tkinter as tk
+import unicodedata
 from datetime import datetime
 from tkinter import messagebox, ttk
 
@@ -10,6 +11,30 @@ CATEGORIAS = {"HARDWARE": "Hardware", "SOFTWARE": "Software", "REDE": "Rede",
 PRIORIDADES = {"BAIXA": "Baixa", "MEDIA": "Média", "ALTA": "Alta", "CRITICA": "Crítica"}
 TIPOS = {"DIAGNOSTICO": "Diagnóstico", "SOLUCAO": "Solução", "OBSERVACAO": "Observação"}
 PERFIS = {"comum": "Usuário Comum", "tecnico": "Técnico de TI", "administrador": "Administrador"}
+
+
+def normalizar(texto):
+    return ''.join(c for c in unicodedata.normalize('NFD', texto.casefold()) if not unicodedata.combining(c))
+
+
+def tabela(pai, colunas, altura=12):
+    quadro = ttk.Frame(pai)
+    quadro.pack(fill="both", expand=True)
+    quadro.columnconfigure(0, weight=1)
+    quadro.rowconfigure(0, weight=1)
+    grade = ttk.Treeview(quadro, columns=[c[0] for c in colunas], show="headings", selectmode="browse", height=altura)
+    for chave, rotulo, largura in colunas:
+        grade.heading(chave, text=rotulo)
+        grade.column(chave, width=largura, minwidth=min(largura, 80), anchor="w")
+    grade.grid(row=0, column=0, sticky="nsew")
+    vertical = ttk.Scrollbar(quadro, command=grade.yview)
+    vertical.grid(row=0, column=1, sticky="ns")
+    horizontal = ttk.Scrollbar(quadro, orient="horizontal", command=grade.xview)
+    horizontal.grid(row=1, column=0, sticky="ew")
+    grade.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
+    grade.tag_configure('alerta', background='#fff2d7')
+    grade.tag_configure('inativo', foreground='#68778b')
+    return grade
 
 
 def codigo(opcoes, texto):
@@ -100,3 +125,8 @@ class Formulario(tk.Toplevel):
         if self.app.executar(tarefa, sucesso, fim=terminar):
             self.enviando = True
             self.botao_salvar.configure(state="disabled")
+
+    def concluido(self, resultado=None):
+        self.destroy()
+        if hasattr(self.app.tela, 'atualizar'):
+            self.app.tela.atualizar()

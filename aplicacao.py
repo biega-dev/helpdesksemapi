@@ -7,21 +7,23 @@ from sistema_local import ErroSistema, SistemaLocal
 
 
 class Aplicacao(tk.Tk):
-    def __init__(self):
+    def __init__(self, acesso='principal'):
         super().__init__()
         self.title("Help Desk | Aplicação local")
         self.geometry("1120x740")
         self.minsize(940, 650)
         self.servico = SistemaLocal()
+        self.modo_local = True
+        self.acesso = acesso
         self.ocupado = False
         self.tarefa_pendente = None
         self.tela = None
         self.dialogo = None
         self.configurar_estilo()
         self.conteudo = ttk.Frame(self)
-        self.conteudo.pack(fill="both", expand=True)
         rodape = ttk.Frame(self, padding=(18, 8))
-        rodape.pack(fill="x")
+        rodape.pack(side='bottom', fill="x")
+        self.conteudo.pack(fill="both", expand=True)
         self.status = tk.StringVar(value="Versão local • Dados mantidos durante esta execução.")
         ttk.Label(rodape, textvariable=self.status, style="Discreto.TLabel").pack(side="left")
         self.protocol("WM_DELETE_WINDOW", self.fechar)
@@ -31,7 +33,6 @@ class Aplicacao(tk.Tk):
         estilo = ttk.Style(self)
         estilo.theme_use("clam")
         self.configure(background="#f3f5f8")
-        self.option_add("*Font", "{Segoe UI} 10")
         estilo.configure(".", font=("Segoe UI", 10), background="#f3f5f8", foreground="#1e293b")
         estilo.configure("TFrame", background="#f3f5f8")
         estilo.configure("TLabel", background="#f3f5f8")
@@ -46,6 +47,8 @@ class Aplicacao(tk.Tk):
         estilo.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"), padding=(8, 10))
         estilo.map("Treeview", background=[("selected", "#dce8ff")], foreground=[("selected", "#16366f")])
         estilo.configure("TNotebook.Tab", padding=(16, 8))
+        estilo.configure('TNotebook', borderwidth=0)
+        estilo.map('TNotebook.Tab', background=[('selected', '#ffffff')], foreground=[('selected', '#2457c5')])
 
     def trocar_tela(self, nova_tela):
         if self.dialogo and self.dialogo.winfo_exists():
@@ -65,6 +68,10 @@ class Aplicacao(tk.Tk):
         from telas.painel import TelaPainel
         self.trocar_tela(TelaPainel)
         self.tela.atualizar()
+
+    def configurar_servidor(self, endereco=None):
+        # A interface é compartilhada com a versão API; aqui tudo permanece local.
+        pass
 
     def abrir_dialogo(self, classe, *args):
         if self.dialogo and self.dialogo.winfo_exists():

@@ -1,12 +1,22 @@
+from datetime import datetime
+from .enums import TipoMovimentacao
 from .excecoes import EstoqueInsuficienteError, EquipamentoBaixadoError
 
 
 class MovimentacaoEstoque:
-  def __init__(self,quantidade,motivo,responsavel,chamado = None):
+  def __init__(self,quantidade,motivo,responsavel,chamado = None, tipo = None):
+    self.__data_hora = datetime.now()
+    self.__tipo = tipo or (TipoMovimentacao.SAIDA if chamado else TipoMovimentacao.ENTRADA)
     self.__quantidade = quantidade
     self.__motivo = motivo
     self.__responsavel = responsavel
     self.__chamado = chamado
+  @property
+  def data_hora(self):
+    return self.__data_hora
+  @property
+  def tipo(self):
+    return self.__tipo
   @property
   def quantidade(self):
     return self.__quantidade
@@ -97,7 +107,7 @@ class Equipamento:
     if not self.ativo:
       raise EquipamentoBaixadoError("Equipamento ja baixado")
     self.__ativo = False
-    mov_baixa = MovimentacaoEstoque(self.quantidade,motivo,responsavel)
+    mov_baixa = MovimentacaoEstoque(self.quantidade,motivo,responsavel, tipo=TipoMovimentacao.BAIXA)
     self.__movimentacoes.append(mov_baixa)
 
   def atualizar_dados(self,descricao,quantidade_minima):
